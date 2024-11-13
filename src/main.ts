@@ -1,5 +1,6 @@
-import { JsonPipe } from "@angular/common";
-import { Component, inject, Injectable, InjectionToken } from "@angular/core";
+import { AsyncPipe, JsonPipe } from "@angular/common";
+import { HttpClient, provideHttpClient } from "@angular/common/http";
+import { Component, inject, Injectable } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 
 @Injectable()
@@ -7,33 +8,30 @@ export class SyncService {
   config = { appName: "Async provider demo" };
 }
 
-const AsyncConfig = new InjectionToken<{ url: string }>("AsyncConfig");
+interface AsyncConfig {
+  url: string;
+}
+
+@Injectable()
+export class AsyncConfigService {
+  config$ = inject(HttpClient).get<AsyncConfig>("/config.json");
+}
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [JsonPipe],
-  providers: [
-    SyncService,
-    {
-      provide: AsyncConfig,
-      useFactory: async () => {
-        const config = await fetch("/config.json").then((r) => r.json());
-        await new Promise((r) => setTimeout(r, 5_000));
-        return config;
-      },
-    },
-  ],
+  imports: [JsonPipe, AsyncPipe],
+  providers: [SyncService, AsyncConfigService],
   template: `
     <h1>Hello from {{ name }}!</h1>
     <p>appName = {{ appName }}</p>
-    <p>dynamicUrl = {{ asyncConfig | json }}</p>
+    <p>dynamicUrl = {{ asyncConfig | async | json }}</p>
   `,
 })
 export class App {
   name = "Angular";
   appName = inject(SyncService).config.appName;
-  asyncConfig = inject(AsyncConfig);
+  asyncConfig = inject(AsyncConfigService).config$;
 }
 
-bootstrapApplication(App);
+bootstrapApplication(App, { providers: [provideHttpClient()] });
