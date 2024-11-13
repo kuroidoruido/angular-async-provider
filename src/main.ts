@@ -1,18 +1,11 @@
 import { JsonPipe } from "@angular/common";
 import { Component, inject, Injectable } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
+import { AsyncConfigService, provideConfigAsync } from "./async-config.service";
 
 @Injectable()
 export class SyncService {
   config = { appName: "Async provider demo" };
-}
-
-interface AsyncConfig {
-  url: string;
-}
-
-export class AsyncConfigService {
-  constructor(public readonly config: AsyncConfig) {}
 }
 
 @Component({
@@ -33,10 +26,5 @@ export class App {
 }
 
 (async () => {
-  const config = await fetch("/config.json").then((r) => r.json());
-  bootstrapApplication(App, {
-    providers: [
-      { provide: AsyncConfigService, useValue: new AsyncConfigService(config) },
-    ],
-  });
+  bootstrapApplication(App, { providers: [await provideConfigAsync()] });
 })();
