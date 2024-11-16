@@ -1,29 +1,39 @@
-import { StaticProvider } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { APP_INITIALIZER, Injectable, Provider } from "@angular/core";
 
 interface AsyncConfig {
   url: string;
 }
 
+@Injectable()
 export class AsyncConfigService {
-  constructor(public readonly config: AsyncConfig) {}
+  public config: AsyncConfig = { url: "" };
 }
 
-export async function provideConfigAsync(): Promise<StaticProvider> {
-  const config = await fetch("/config.json").then((r) => r.json());
-  return {
-    provide: AsyncConfigService,
-    useValue: new AsyncConfigService(config),
-  };
+export function provideConfigAsync(): Provider[] {
+  return [
+    AsyncConfigService,
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory:
+        (asyncConfigService: AsyncConfigService, http: HttpClient) =>
+        async () => {
+          const config = await fetch("/config.json").then((r) => r.json());
+          asyncConfigService.config = config;
+        },
+      deps: [AsyncConfigService, HttpClient],
+    },
+  ];
 }
 
-export async function provideConfigAsyncTest(
+export function provideConfigAsyncTest(
   config: Partial<AsyncConfig> = {}
-): Promise<StaticProvider> {
-  return {
-    provide: AsyncConfigService,
-    useValue: new AsyncConfigService({
-      url: "http://default-url.local",
-      ...config,
-    }),
+): Provider[] {
+  const service = new AsyncConfigService();
+  service.config = {
+    url: "http://default-url.local",
+    ...config,
   };
+  return [{ provide: AsyncConfigService, useValue: service }];
 }

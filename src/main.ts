@@ -2,6 +2,7 @@ import { JsonPipe } from "@angular/common";
 import { Component, inject, Injectable } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { AsyncConfigService, provideConfigAsync } from "./async-config.service";
+import { provideHttpClient } from "@angular/common/http";
 
 @Injectable()
 export class SyncService {
@@ -26,5 +27,7 @@ export class App {
 }
 
 (async () => {
-  bootstrapApplication(App, { providers: [await provideConfigAsync()] });
+  bootstrapApplication(App, {
+    providers: [provideHttpClient(), ...provideConfigAsync()],
+  });
 })();
