@@ -1,5 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { APP_INITIALIZER, Injectable, Provider } from "@angular/core";
+import { tap } from "rxjs";
 
 interface AsyncConfig {
   url: string;
@@ -17,11 +18,10 @@ export function provideConfigAsync(): Provider[] {
       provide: APP_INITIALIZER,
       multi: true,
       useFactory:
-        (asyncConfigService: AsyncConfigService, http: HttpClient) =>
-        async () => {
-          const config = await fetch("/config.json").then((r) => r.json());
-          asyncConfigService.config = config;
-        },
+        (asyncConfigService: AsyncConfigService, http: HttpClient) => () =>
+          http
+            .get<AsyncConfig>("/config.json")
+            .pipe(tap((config) => (asyncConfigService.config = config))),
       deps: [AsyncConfigService, HttpClient],
     },
   ];
